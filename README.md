@@ -138,6 +138,13 @@ We evaluate DeepSignal in **SUMO simulation** using intersection-level metrics c
 - **Avg Throughput** (veh/5min)
 - **Avg Response Time** (s; LLM-only)
 
+For **CyclePlan model** evaluation, we use the following additional metrics:
+
+- **Format Success Rate**: The percentage of model outputs that conform to the expected JSON format (`[{"phase_id": <int>, "final": <int>}, ...]`).
+- **Avg Queue Vehicles**: The average number of vehicles waiting in queue across all phases and time steps.
+- **Avg Total Delay**: The average total delay time in seconds experienced by vehicles at the intersection.
+- **Throughput (veh/min)**: The number of vehicles passing through the intersection per minute (computed as raw throughput × 60).
+
 #### Metric computation (formulas)
 
 Let $t$ index simulation steps in a time window, and $l$ index controlled lanes at an intersection.
