@@ -16,3 +16,5 @@ scripts/
 *.jsonl
 traffic_control_comparison.ipynb
 scenarios/
+*.csv
+.planning/
