@@ -142,7 +142,7 @@ For **CyclePlan model** evaluation, we use the following additional metrics:
 
 - **Format Success Rate**: The percentage of model outputs that conform to the expected JSON format (`[{"phase_id": <int>, "final": <int>}, ...]`).
 - **Avg Queue Vehicles**: The average number of vehicles waiting in queue across all phases and time steps.
-- **Avg Total Delay**: The average total delay time in seconds experienced by vehicles at the intersection.
+- **Avg Delay per Vehicle**: The average delay time in seconds experienced per vehicle at the intersection.
 - **Throughput (veh/min)**: The number of vehicles passing through the intersection per minute (computed as raw throughput × 60).
 
 #### Metric computation (formulas)
@@ -186,18 +186,19 @@ $$
 
 ### Performance Metrics Comparison by Model (CyclePlan) $^{*}$
 
-| Model | Format Success Rate (%) | Avg Queue Vehicles | Avg Total Delay (s) | Throughput (veh/min) |
+| Model | Format Success Rate (%) | Avg Queue Vehicles | Avg Delay per Vehicle (s) | Throughput (veh/min) |
 |:---:|:---:|:---:|:---:|:---:|
-| **DeepSignal-CyclePlan-4B-V1 (Ours)** | **98.5** | **2.34** | **18.72** | **45.6** |
-| FixedTiming | - | 3.82 | 28.45 | 42.1 |
-| MaxPressure | - | 3.15 | 24.18 | 43.8 |
-| Webster | - | 3.56 | 26.92 | 42.9 |
-| SOTL | - | 2.98 | 22.35 | 44.2 |
-| CGA | - | 2.71 | 20.18 | 44.8 |
+| **DeepSignal-CyclePlan-4B-V1 F16 (Ours)** | **100.0** | **3.504** | **27.747** | **8.611** |
+| [`GLM-4.7-Flash`](https://huggingface.co/zai-org/glm-4.7-flash) | 100.0 | 7.323 | 29.422 | 8.567 |
+| DeepSignal-CyclePlan-4B-V1 Q4_K_M (Ours) | 98.1 | 4.783 | 29.891 | 7.722 |
+| [`Qwen3-30B-A3B`](https://huggingface.co/Qwen/Qwen3-30B-A3B-2507) | 97.1 | 6.938 | 31.135 | 7.578 |
+| [`LightGPT-8B-Llama3`](https://huggingface.co/lightgpt/LightGPT-8B-Llama3) | 68.0 | 5.026 | 31.266 | 7.380 |
+| [`GPT-OSS-20B`](https://huggingface.co/openai/gpt-oss-20b) | 65.4 | 6.289 | 31.947 | 7.247 |
+| [`Qwen3-4B (thinking)`](https://huggingface.co/Qwen/Qwen3-4B-Instruct-2507) | 54.1 | 10.060 | 48.895 | 7.096 |
 
-`*`: Each simulation scenario runs for 60 minutes. We discard the first **5 minutes** as warm-up, then compute metrics over the next **20 minutes** (minute 5 to 25). All evaluations are conducted on a **Mac Studio M3 Ultra**. Format Success Rate is only applicable to LLM-based methods; traditional algorithms do not have this metric.
+`*`: Each simulation scenario runs for 60 minutes. We discard the first **5 minutes** as warm-up, then compute metrics over the next **20 minutes** (minute 5 to 25). All evaluations are conducted on a **Mac Studio M3 Ultra**.
 
-**Conclusion**: DeepSignal-CyclePlan-4B-V1 achieves the highest format success rate among LLM-based approaches while also delivering competitive traffic performance metrics. Compared to traditional baseline algorithms (FixedTiming, MaxPressure, Webster, SOTL, CGA), DeepSignal-CyclePlan-4B-V1 demonstrates lower average queue vehicles and total delay, with the highest throughput in veh/min.
+**Conclusion**: DeepSignal-CyclePlan-4B-V1 (F16) achieves a 100% format success rate, the lowest average queue vehicles (3.504), and the highest throughput (8.611 veh/min) among all evaluated models. The Q4_K_M quantized version maintains strong performance with 98.1% format success rate while offering faster inference.
 
 ## Real-world Deployment Comparison
 

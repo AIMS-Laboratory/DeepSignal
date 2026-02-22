@@ -160,7 +160,7 @@ $$
   - `average_saturation` $=\dfrac{1}{T}\sum_{t=1}^{T}\bar{X}_t$
   - `average_cumulative_queue_length` $=\sum_{t=1}^{T}\bar{q}_t$（单位：veh⋅min）
 
-### 不同模型的指标对比表 $^{*}$
+### 不同模型的指标对比表（Phase）$^{*}$
 
 | 模型 | 平均饱和度 | 平均累积排队长度 (veh⋅min) | 平均车通量（veh/5min） | 平均响应时间(s) |
 |:---:|:---:|:---:|:---:|:---:|
@@ -179,18 +179,19 @@ $$
 
 ### CyclePlan 模型评估对比表 $^{*}$
 
-| 模型 | 格式成功率 (%) | 平均排队车辆数 | 平均总延误 (s) | 车通量 (veh/min) |
+| 模型 | 格式成功率 (%) | 平均排队车辆数 | 每辆车平均延误 (s) | 车通量 (veh/min) |
 |:---:|:---:|:---:|:---:|:---:|
-| **DeepSignal-CyclePlan-4B-V1 (Ours)** | **98.5** | **2.34** | **18.72** | **45.6** |
-| FixedTiming | - | 3.82 | 28.45 | 42.1 |
-| MaxPressure | - | 3.15 | 24.18 | 43.8 |
-| Webster | - | 3.56 | 26.92 | 42.9 |
-| SOTL | - | 2.98 | 22.35 | 44.2 |
-| CGA | - | 2.71 | 20.18 | 44.8 |
+| **DeepSignal-CyclePlan-4B-V1 F16 (Ours)** | **100.0** | **3.504** | **27.747** | **8.611** |
+| [`GLM-4.7-Flash`](https://huggingface.co/zai-org/glm-4.7-flash) | 100.0 | 7.323 | 29.422 | 8.567 |
+| DeepSignal-CyclePlan-4B-V1 Q4_K_M (Ours) | 98.1 | 4.783 | 29.891 | 7.722 |
+| [`Qwen3-30B-A3B`](https://huggingface.co/Qwen/Qwen3-30B-A3B-2507) | 97.1 | 6.938 | 31.135 | 7.578 |
+| [`LightGPT-8B-Llama3`](https://huggingface.co/lightgpt/LightGPT-8B-Llama3) | 68.0 | 5.026 | 31.266 | 7.380 |
+| [`GPT-OSS-20B`](https://huggingface.co/openai/gpt-oss-20b) | 65.4 | 6.289 | 31.947 | 7.247 |
+| [`Qwen3-4B (thinking)`](https://huggingface.co/Qwen/Qwen3-4B-Instruct-2507) | 54.1 | 10.060 | 48.895 | 7.096 |
 
-`*`：每个仿真场景总时长为 60 min。我们先去除前 **5 min** 的 warm-up（预热）阶段，然后使用紧随其后的 **20 min**（即第 5–25 分钟）数据计算指标。所有评估均在 **Mac Studio M3 Ultra** 上进行。格式成功率仅适用于基于大模型的方法；传统算法没有此指标。
+`*`：每个仿真场景总时长为 60 min。我们先去除前 **5 min** 的 warm-up（预热）阶段，然后使用紧随其后的 **20 min**（即第 5–25 分钟）数据计算指标。所有评估均在 **Mac Studio M3 Ultra** 上进行。
 
-**结论**：DeepSignal-CyclePlan-4B-V1 在基于大模型的方法中实现了最高的格式成功率，同时提供了具有竞争力的交通性能指标。与传统基准算法（FixedTiming、MaxPressure、Webster、SOTL、CGA）相比，DeepSignal-CyclePlan-4B-V1 在平均排队车辆数和总延误方面表现更优，且车通量最高。
+**结论**：DeepSignal-CyclePlan-4B-V1（F16）在所有评估模型中实现了 100% 的格式成功率、最低的平均排队车辆数（3.504）和最高的车通量（8.611 veh/min）。Q4_K_M 量化版本在保持 98.1% 格式成功率的同时提供更快的推理速度。
 
 ### CyclePlan 评估指标说明
 
@@ -198,7 +199,7 @@ $$
 
 - **格式成功率**：模型输出符合预期 JSON 格式 `[{"phase_id": <int>, "final": <int>}, ...]` 的百分比。
 - **平均排队车辆数**：所有相位和时间步长中排队等待车辆的平均数量。
-- **平均总延误**：车辆在交叉口经历的平均总延误时间（秒）。
+- **每辆车平均延误**：每辆车在交叉口经历的平均延误时间（秒）。
 - **车通量 (veh/min)**：每分钟通过交叉口的车辆数（原始值 × 60 换算）。
 
 ## 某城市某交叉口大模型配时优化实际效果对比
