@@ -2,12 +2,16 @@
 
 [中文 README](README_zh.md)
 
-DeepSignal is our fine-tuned large language model for **traffic-signal control**. The current release is **DeepSignal-4B-V1**.
+DeepSignal is our suite of fine-tuned large language models for **traffic-signal control**. The current releases include two models:
 
-- **Model (Hugging Face)**: [`AIMS2025/DeepSignal`](https://huggingface.co/AIMS2025/DeepSignal)
+- **DeepSignal-Phase-4B-V1** — next signal-phase prediction (predicts which phase to activate next and for how long)
+- **DeepSignal-CyclePlan-4B-V1** — signal-cycle timing optimization (outputs green-time allocation for every phase in the upcoming cycle)
 
+Both models are available on Hugging Face under the same repository:
 
-This repository also contains a SUMO-based simulation stack and an MCP server to run closed-loop interaction between the LLM and traffic simulations, to evaluate the performance of various baseline signal control models/algorithms, and compare with DeepSignal-4B-V1. Currently, this repository does not include the code for fine-tuning the large language model.
+- **Model (Hugging Face)**: [`AIMS2025/DeepSignal`](https://huggingface.co/AIMS2025/DeepSignal) (contains both Phase and CyclePlan model files)
+
+This repository also contains a SUMO-based simulation stack and an MCP server to run closed-loop interaction between the LLM and traffic simulations, to evaluate the performance of various baseline signal control models/algorithms. Currently, this repository does not include the code for fine-tuning the large language model.
 
 ## Team
 
@@ -23,6 +27,81 @@ We fine-tune DeepSignal using a two-stage learning pipeline:
 
 - **Offline learning (SFT)**: supervised fine-tuning on instruction-style data to learn traffic-state analysis and signal-control decision formatting.
 - **Online learning (RL with SUMO)**: reinforcement learning by interacting with SUMO simulations (closed-loop), using diverse scenarios under `scenarios/`.
+
+## DeepSignal-Phase-4B-V1
+
+DeepSignal-Phase-4B-V1 is designed for **next signal-phase prediction**. Given the current traffic scene and state at an intersection, it predicts which signal phase to activate next and for how long.
+
+**Prompt example:**
+
+```
+You are a traffic management expert. You can use your traffic knowledge to solve the traffic signal control task.
+Based on the given traffic scene and state, predict the next signal phase and its duration.
+You must answer directly, the format must be: next signal phase: {number}, duration: {seconds} seconds
+where the number is the phase index (starting from 0) and the seconds is the duration (usually between 20-90 seconds).
+```
+
+## DeepSignal-CyclePlan-4B-V1
+
+DeepSignal-CyclePlan-4B-V1 is designed for **signal-cycle timing optimization**. It takes predicted traffic state data for the upcoming cycle as input and outputs green-time allocations for every phase.
+
+**System Prompt:**
+
+```
+You are a traffic signal timing optimization expert.
+Please carefully analyze the predicted traffic states for each phase in the next cycle, provide the timing plan for the next cycle, and give your reasoning process.
+Place the reasoning process between <start_working_out> and <end_working_out>.
+Then, place your final plan between <SOLUTION> and </SOLUTION>.
+```
+
+**User Prompt (template):**
+
+```
+【cycle_predict_input_json】{
+  "prediction": {
+    "as_of": "<timestamp>",
+    "phase_waits": [
+      {
+        "phase_id": <int>,
+        "pred_saturation": <float>,
+        "min_green": <int>,
+        "max_green": <int>,
+        "capacity": <int>
+      }
+      // ... more phases
+    ]
+  }
+}【/cycle_predict_input_json】
+
+Task (must complete):
+Mainly based on prediction.phase_waits pred_saturation (already calculated), output the final green light time for each phase in the next cycle (unit: seconds), while satisfying hard constraints.
+
+Field descriptions (meaning only):
+- prediction.phase_waits[*].min_green / max_green: seconds
+- prediction.phase_waits[*].pred_saturation: predicted saturation (pred_wait / capacity)
+- prediction.phase_waits[*].capacity: phase capacity (vehicle capacity)
+
+Hard constraints (must satisfy):
+1) Fixed phase order: output strictly in the order of prediction.phase_waits; no skipping, no reordering.
+2) Per-phase constraint: final must satisfy prediction.phase_waits[*].min_green ≤ final ≤ prediction.phase_waits[*].max_green.
+3) final must be an integer in seconds.
+
+Hints (non-hard constraints):
+- capacity is for reference only; final decision should be based primarily on pred_saturation.
+
+Output format:
+1) JSON top level must be an array (list); array length must equal prediction.phase_waits length.
+2) Array elements must be objects: {"phase_id": <int>, "final": <int>}; no other fields allowed.
+```
+
+**Input format**: JSON wrapped in `【cycle_predict_input_json】...【/cycle_predict_input_json】` tags, containing `prediction.phase_waits` — an array of per-phase objects with `phase_id`, `pred_saturation`, `min_green`, `max_green`, and `capacity`.
+
+**Output format**: A JSON array of objects `[{"phase_id": <int>, "final": <int>}, ...]`, where `final` is the allocated green time in integer seconds for each phase.
+
+## Changelog
+
+- **2025-12-16**: Released DeepSignal-4B-V1 (next signal-phase prediction model).
+- **2026-02-22**: Renamed the original model to **DeepSignal-Phase-4B-V1**; released **DeepSignal-CyclePlan-4B-V1** (signal-cycle timing optimization model).
 
 ## Scenarios (training vs hold-out evaluation)
 
@@ -81,12 +160,12 @@ $$
   - `average_saturation` $= \dfrac{1}{T}\sum_{t=1}^{T}\bar{X}_t$
   - `average_cumulative_queue_length` $= \sum_{t=1}^{T}\bar{q}_t$ (unit: veh⋅min)
 
-### Performance Metrics Comparison by Model $^{*}$
+### Performance Metrics Comparison by Model (Phase) $^{*}$
 
 | Model | Avg Saturation | Avg Cumulative Queue Length (veh⋅min) | Avg Throughput (veh/5min) | Avg Response Time (s) |
 |:---:|:---:|:---:|:---:|:---:|
 | [`GPT-OSS-20B (thinking)`](https://huggingface.co/openai/gpt-oss-20b) | 0.380 | 14.088 | 77.910 | 6.768 |
-| **DeepSignal-4B (Ours)** | 0.422 | 15.703 | **79.883** | 2.131 |
+| **DeepSignal-Phase-4B (Ours)** | 0.422 | 15.703 | **79.883** | 2.131 |
 | [`Qwen3-30B-A3B`](https://huggingface.co/Qwen/Qwen3-VL-30B-A3B-Instruct) | 0.431 | 17.046 | 79.059 | 2.727 |
 | [`Qwen3-4B`](https://huggingface.co/Qwen/Qwen3-4B-Instruct-2507) | 0.466 | 57.699 | 75.712 | 1.994 |
 | Max Pressure | 0.465 | 23.022 | 77.236 | ** |
