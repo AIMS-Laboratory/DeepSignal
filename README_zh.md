@@ -23,10 +23,85 @@ DeepSignal 是我们自主微调的交通信号控制大模型套件。当前发
 
 ## 核心思路：离线学习 + 在线学习
 
-我们采用“离线 + 在线”的两阶段微调流程：
+我们采用”离线 + 在线”的两阶段微调流程：
 
 - **离线学习（SFT）**：监督微调，让模型学会交通状态分析、控制策略建议、输出格式约束等。
 - **在线学习（RL + SUMO 交互）**：模型在 SUMO 仿真中与环境交互，通过强化学习进一步优化信号控制决策。
+
+## DeepSignal-Phase-4B-V1
+
+DeepSignal-Phase-4B-V1 专为**下一信号相位预测**设计。给定路口当前的交通场景和状态，预测下一个激活的信号相位及其持续时间。
+
+**Prompt 示例：**
+
+```
+你是一位交通管理专家。你可以运用你的交通常识知识来解决交通信号控制任务。
+根据给定的交通场景和状态，预测下一个信号相位及其持续时间。
+你必须直接回答，格式必须是：下一个信号相位：{数字}，持续时间：{秒数}秒
+其中数字是相位索引（从0开始），秒数是持续时间（通常在20-90秒之间）。
+```
+
+## DeepSignal-CyclePlan-4B-V1
+
+DeepSignal-CyclePlan-4B-V1 专为**信号周期配时优化**设计。它接收下一周期的预测交通状态数据作为输入，输出各相位的绿灯时间分配。
+
+**System Prompt：**
+
+```
+你是交通信号配时优化专家。
+请认真分析预测得到的下个周期各个相位的交通状态，给出下个周期的配时方案，并给出你的推理过程。
+将推理过程放在 <start_working_out> 和 <end_working_out> 之间。
+然后，将你的最终方案放在 <SOLUTION> 和 </SOLUTION> 之间。
+```
+
+**User Prompt（模板）：**
+
+```
+【cycle_predict_input_json】{
+  “prediction”: {
+    “as_of”: “<时间戳>”,
+    “phase_waits”: [
+      {
+        “phase_id”: <int>,
+        “pred_saturation”: <float>,
+        “min_green”: <int>,
+        “max_green”: <int>,
+        “capacity”: <int>
+      }
+      // ... 更多相位
+    ]
+  }
+}【/cycle_predict_input_json】
+
+任务(必须完成):
+主要基于 prediction.phase_waits 的 pred_saturation(已计算),在满足硬约束前提下输出下一周期各相位最终绿灯时间 final(单位:秒)。
+
+字段说明(仅说明含义):
+- prediction.phase_waits[*].min_green / max_green:秒。
+- prediction.phase_waits[*].pred_saturation:预测饱和度(pred_wait / capacity)。
+- prediction.phase_waits[*].capacity:相位容量(车辆容纳数)。
+
+硬约束(必须满足):
+1) 相位顺序固定:严格按 prediction.phase_waits 的顺序输出;不可跳相、不可重排。
+2) 每相位约束:final 必须满足 prediction.phase_waits[*].min_green ≤ final ≤ prediction.phase_waits[*].max_green。
+3) final 必须为整数秒。
+
+提示(非硬约束):
+- capacity 仅供参考,最终决策以 pred_saturation 为主。
+
+输出格式:
+1) JSON 顶层必须是数组(list);数组长度必须等于 prediction.phase_waits 的长度。
+2) 数组元素必须为对象:{“phase_id”: <int>, “final”: <int>};不允许输出其它字段。
+```
+
+**输入格式**：JSON 包装在 `【cycle_predict_input_json】...【/cycle_predict_input_json】` 标签内，包含各相位的预测饱和度、最小/最大绿灯时间约束和容量信息。
+
+**输出格式**：一个 JSON 对象数组 `[{“phase_id”: <int>, “final”: <int>}, ...]`，为每个相位分配最终的绿灯时间（秒）。
+
+## 更新日志
+
+- **2025-12-16**：发布 DeepSignal-4B-V1（下一信号相位预测模型）。
+- **2026-02-22**：原模型更名为 **DeepSignal-Phase-4B-V1**；发布 **DeepSignal-CyclePlan-4B-V1**（信号周期配时优化模型）。
 
 ## 场景（训练 vs 未参与训练的评估）
 
