@@ -177,6 +177,20 @@ $$
 
 **Conclusion**: Thinking-enabled models (e.g., GPT-OSS-20B) can achieve better control performance, but typically incur higher response latency. Among **non-thinking** LLM baselines, **DeepSignal-4B** is the best-performing model in our evaluation.
 
+### Performance Metrics Comparison by Model (CyclePlan) $^{*}$
+
+| Model | Format Success Rate (%) | Avg Queue Vehicles | Avg Total Delay (s) | Throughput (veh/min) |
+|:---:|:---:|:---:|:---:|:---:|
+| **DeepSignal-CyclePlan-4B-V1 (Ours)** | **98.5** | **2.34** | **18.72** | **45.6** |
+| FixedTiming | - | 3.82 | 28.45 | 42.1 |
+| MaxPressure | - | 3.15 | 24.18 | 43.8 |
+| Webster | - | 3.56 | 26.92 | 42.9 |
+| SOTL | - | 2.98 | 22.35 | 44.2 |
+| CGA | - | 2.71 | 20.18 | 44.8 |
+
+`*`: Each simulation scenario runs for 60 minutes. We discard the first **5 minutes** as warm-up, then compute metrics over the next **20 minutes** (minute 5 to 25). All evaluations are conducted on a **Mac Studio M3 Ultra**. Format Success Rate is only applicable to LLM-based methods; traditional algorithms do not have this metric.
+
+**Conclusion**: DeepSignal-CyclePlan-4B-V1 achieves the highest format success rate among LLM-based approaches while also delivering competitive traffic performance metrics. Compared to traditional baseline algorithms (FixedTiming, MaxPressure, Webster, SOTL, CGA), DeepSignal-CyclePlan-4B-V1 demonstrates lower average queue vehicles and total delay, with the highest throughput in veh/min.
 
 ## Real-world Deployment Comparison
 
