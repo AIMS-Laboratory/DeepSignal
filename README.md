@@ -265,13 +265,44 @@ Full video demonstration can be found on [Youtube](https://www.youtube.com/watch
 
 If you are looking for GGUF files for local inference (`llama.cpp` / LM Studio), check the model card in Hugging Face and the packaging notes under `hf/`.
 
+### DeepSignal-Phase-4B-V1
+
+GGUF versions: **F16** (full precision) and **Q4_K_M** (quantized).
+
 Example (llama.cpp):
 
 ```bash
-llama-cli -m DeepSignal-4B_V1.F16.gguf -p "You are a traffic management expert. You can use your traffic knowledge to solve the traffic signal control task.
+llama-cli -m DeepSignal-Phase-4B_V1.F16.gguf -p "You are a traffic management expert. You can use your traffic knowledge to solve the traffic signal control task.
 Based on the given traffic scene and state, predict the next signal phase and its duration.
 You must answer directly, the format must be: next signal phase: {number}, duration: {seconds} seconds
 where the number is the phase index (starting from 0) and the seconds is the duration (usually between 20-90 seconds)."
+```
+
+### DeepSignal-CyclePlan-4B-V1
+
+GGUF versions: **F16** (full precision) and **Q4_K_M** (quantized).
+
+Example (llama.cpp):
+
+```bash
+llama-cli -m DeepSignal-CyclePlan-4B_V1.Q4_K_M.gguf \
+  -p "You are a traffic signal timing optimization expert.
+Please carefully analyze the predicted traffic states for each phase in the next cycle, provide the timing plan for the next cycle, and give your reasoning process.
+Place the reasoning process between <start_working_out> and <end_working_out>.
+Then, place your final plan between <SOLUTION> and </SOLUTION>.
+
+【cycle_predict_input_json】{
+  \"prediction\": {
+    \"as_of\": \"2026-02-22T10:00:00\",
+    \"phase_waits\": [
+      {\"phase_id\": 0, \"pred_saturation\": 0.8, \"min_green\": 20, \"max_green\": 60, \"capacity\": 100},
+      {\"phase_id\": 1, \"pred_saturation\": 0.5, \"min_green\": 15, \"max_green\": 45, \"capacity\": 80}
+    ]
+  }
+}【/cycle_predict_input_json】
+
+Task (must complete):
+Mainly based on prediction.phase_waits pred_saturation (already calculated), output the final green light time for each phase in the next cycle (unit: seconds), while satisfying hard constraints."
 ```
 
 ## Environment setup
