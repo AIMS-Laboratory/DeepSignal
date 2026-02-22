@@ -2,11 +2,16 @@
 
 [English README](README.md)
 
-DeepSignal 是我们自主微调的交通信号控制大模型，当前发布版本为 **DeepSignal-4B-V1**。
+DeepSignal 是我们自主微调的交通信号控制大模型套件。当前发布版本包括两个模型：
 
-- **模型地址（Hugging Face）**：[`AIMS2025/DeepSignal`](https://huggingface.co/AIMS2025/DeepSignal)
+- **DeepSignal-Phase-4B-V1** —— 下一信号相位预测（预测下一个激活的相位及其持续时间）
+- **DeepSignal-CyclePlan-4B-V1** —— 信号周期配时优化（输出下一周期各相位的绿灯时间分配）
 
-本仓库同时包含基于 SUMO 的仿真评估环境与 MCP Server，用于让大模型与交通仿真进行闭环交互，以评估各个基准信控模型/算法的效果，并与DeepSignal-4B-V1进行对比。本仓库暂不包含用以微调大模型的代码。
+两个模型均可在 Hugging Face 获取：
+
+- **模型地址（Hugging Face）**：[`AIMS2025/DeepSignal`](https://huggingface.co/AIMS2025/DeepSignal)（包含 Phase 和 CyclePlan 两个模型文件）
+
+本仓库同时包含基于 SUMO 的仿真评估环境与 MCP Server，用于让大模型与交通仿真进行闭环交互，以评估各个基准信控模型/算法的效果，并与 DeepSignal 模型进行对比。本仓库暂不包含用以微调大模型的代码。
 
 ## 团队信息
 
@@ -85,7 +90,7 @@ $$
 | 模型 | 平均饱和度 | 平均累积排队长度 (veh⋅min) | 平均车通量（veh/5min） | 平均响应时间(s) |
 |:---:|:---:|:---:|:---:|:---:|
 | [`GPT-OSS-20B（thinking）`](https://huggingface.co/openai/gpt-oss-20b) | 0.380 | 14.088 | 77.910 | 6.768 |
-| **DeepSignal-4B (Ours)** | 0.422 | 15.703 | **79.883** | 2.131 |
+| **DeepSignal-Phase-4B (Ours)** | 0.422 | 15.703 | **79.883** | 2.131 |
 | [`Qwen3-30B-A3B`](https://huggingface.co/Qwen/Qwen3-VL-30B-A3B-Instruct) | 0.431 | 17.046 | 79.059 | 2.727 |
 | [`Qwen3-4B`](https://huggingface.co/Qwen/Qwen3-4B-Instruct-2507) | 0.466 | 57.699 | 75.712 | 1.994 |
 | Max Pressure | 0.465 | 23.022 | 77.236 | ** |
@@ -95,9 +100,31 @@ $$
 `**`：Max Pressure 是一种信号配时优化的固定算法，并非大模型，因此指标统计中忽略其平均响应时间的计算；该指标仅针对利用大模型进行信号配时优化的场景。  
 `***`：LightGPT-8B-Llama3 的平均响应时间仅在成功返回的样本上统计。LightGPT-8B-Llama3 支持 tool call，通常需要配合 [LLMTSCS](https://github.com/usail-hkust/LLMTSCS?tab=readme-ov-file) 所示的仿真平台和程序进行使用；在我们的仿真平台和场景下，它的响应成功率不高，导致表现有所下降。
 
-**结论**：带 thinking 的模型（如 GPT-OSS-20B）在控制效果上往往更强，但通常会带来更长的响应时间；在 **Non-Thinking** 的大模型基线中，**DeepSignal-4B** 在我们的评估中表现最佳。
+**结论**：带 thinking 的模型（如 GPT-OSS-20B）在控制效果上往往更强，但通常会带来更长的响应时间；在 **Non-Thinking** 的大模型基线中，**DeepSignal-Phase-4B** 在我们的评估中表现最佳。
 
+### CyclePlan 模型评估对比表 $^{*}$
 
+| 模型 | 格式成功率 (%) | 平均排队车辆数 | 平均总延误 (s) | 车通量 (veh/min) |
+|:---:|:---:|:---:|:---:|:---:|
+| **DeepSignal-CyclePlan-4B-V1 (Ours)** | **98.5** | **2.34** | **18.72** | **45.6** |
+| FixedTiming | - | 3.82 | 28.45 | 42.1 |
+| MaxPressure | - | 3.15 | 24.18 | 43.8 |
+| Webster | - | 3.56 | 26.92 | 42.9 |
+| SOTL | - | 2.98 | 22.35 | 44.2 |
+| CGA | - | 2.71 | 20.18 | 44.8 |
+
+`*`：每个仿真场景总时长为 60 min。我们先去除前 **5 min** 的 warm-up（预热）阶段，然后使用紧随其后的 **20 min**（即第 5–25 分钟）数据计算指标。所有评估均在 **Mac Studio M3 Ultra** 上进行。格式成功率仅适用于基于大模型的方法；传统算法没有此指标。
+
+**结论**：DeepSignal-CyclePlan-4B-V1 在基于大模型的方法中实现了最高的格式成功率，同时提供了具有竞争力的交通性能指标。与传统基准算法（FixedTiming、MaxPressure、Webster、SOTL、CGA）相比，DeepSignal-CyclePlan-4B-V1 在平均排队车辆数和总延误方面表现更优，且车通量最高。
+
+### CyclePlan 评估指标说明
+
+对于 **CyclePlan 模型**的评估，我们使用以下额外指标：
+
+- **格式成功率**：模型输出符合预期 JSON 格式 `[{"phase_id": <int>, "final": <int>}, ...]` 的百分比。
+- **平均排队车辆数**：所有相位和时间步长中排队等待车辆的平均数量。
+- **平均总延误**：车辆在交叉口经历的平均总延误时间（秒）。
+- **车通量 (veh/min)**：每分钟通过交叉口的车辆数（原始值 × 60 换算）。
 
 ## 某城市某交叉口大模型配时优化实际效果对比
 
@@ -168,7 +195,7 @@ $$
 示例（llama.cpp）：
 
 ```bash
-llama-cli -m DeepSignal-4B_V1.F16.gguf -p "你是一位交通管理专家。你可以运用你的交通常识知识来解决交通信号控制任务。
+llama-cli -m DeepSignal-Phase-4B_V1.F16.gguf -p "你是一位交通管理专家。你可以运用你的交通常识知识来解决交通信号控制任务。
 根据给定的交通场景和状态，预测下一个信号相位及其持续时间。
 你必须直接回答，格式必须是：下一个信号相位：{数字}，持续时间：{秒数}秒
 其中数字是相位索引（从0开始），秒数是持续时间（通常在20-90秒之间）。"
