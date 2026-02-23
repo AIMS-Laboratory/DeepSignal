@@ -78,7 +78,7 @@ Mainly based on prediction.phase_waits pred_saturation (already calculated), out
 
 Field descriptions (meaning only):
 - prediction.phase_waits[*].min_green / max_green: seconds
-- prediction.phase_waits[*].pred_saturation: predicted saturation (pred_wait / capacity)
+- prediction.phase_waits[*].pred_saturation: predicted saturation (pred_wait / capacity), where pred_wait is the predicted number of waiting vehicles for this phase in the next cycle, which can be computed using time-series forecasting models such as [LightGBM](https://github.com/microsoft/LightGBM) based on historical traffic data.
 - prediction.phase_waits[*].capacity: phase capacity (vehicle capacity)
 
 Hard constraints (must satisfy):
