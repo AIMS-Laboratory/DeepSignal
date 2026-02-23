@@ -289,23 +289,23 @@ CyclePlan 模型同样提供 GGUF 格式，包含 **F16**（全精度）和 **Q4
 
 ```bash
 llama-cli -m DeepSignal-CyclePlan-4B_V1.Q4_K_M.gguf \
-  -p "你是交通信号配时优化专家。
+  -p '你是交通信号配时优化专家。
 请认真分析预测得到的下个周期各个相位的交通状态，给出下个周期的配时方案，并给出你的推理过程。
 将推理过程放在 <start_working_out> 和 <end_working_out> 之间。
 然后，将你的最终方案放在 <SOLUTION> 和 </SOLUTION> 之间。
 
 【cycle_predict_input_json】{
-  \"prediction\": {
-    \"as_of\": \"2026-02-22T10:00:00\",
-    \"phase_waits\": [
-      {\"phase_id\": 0, \"pred_saturation\": 0.8, \"min_green\": 20, \"max_green\": 60, \"capacity\": 100},
-      {\"phase_id\": 1, \"pred_saturation\": 0.5, \"min_green\": 15, \"max_green\": 45, \"capacity\": 80}
+  "prediction": {
+    "as_of": "2026-02-22T10:00:00",
+    "phase_waits": [
+      {"phase_id": 0, "pred_saturation": 0.8, "min_green": 20, "max_green": 60, "capacity": 100},
+      {"phase_id": 1, "pred_saturation": 0.5, "min_green": 15, "max_green": 45, "capacity": 80}
     ]
   }
 }【/cycle_predict_input_json】
 
 任务(必须完成):
-主要基于 prediction.phase_waits 的 pred_saturation(已计算),在满足硬约束前提下输出下一周期各相位最终绿灯时间 final(单位:秒)。"
+主要基于 prediction.phase_waits 的 pred_saturation(已计算),在满足硬约束前提下输出下一周期各相位最终绿灯时间 final(单位:秒)。'
 ```
 
 ## 环境配置

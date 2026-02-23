@@ -287,23 +287,23 @@ Example (llama.cpp):
 
 ```bash
 llama-cli -m DeepSignal-CyclePlan-4B_V1.Q4_K_M.gguf \
-  -p "You are a traffic signal timing optimization expert.
+  -p 'You are a traffic signal timing optimization expert.
 Please carefully analyze the predicted traffic states for each phase in the next cycle, provide the timing plan for the next cycle, and give your reasoning process.
 Place the reasoning process between <start_working_out> and <end_working_out>.
 Then, place your final plan between <SOLUTION> and </SOLUTION>.
 
 【cycle_predict_input_json】{
-  \"prediction\": {
-    \"as_of\": \"2026-02-22T10:00:00\",
-    \"phase_waits\": [
-      {\"phase_id\": 0, \"pred_saturation\": 0.8, \"min_green\": 20, \"max_green\": 60, \"capacity\": 100},
-      {\"phase_id\": 1, \"pred_saturation\": 0.5, \"min_green\": 15, \"max_green\": 45, \"capacity\": 80}
+  "prediction": {
+    "as_of": "2026-02-22T10:00:00",
+    "phase_waits": [
+      {"phase_id": 0, "pred_saturation": 0.8, "min_green": 20, "max_green": 60, "capacity": 100},
+      {"phase_id": 1, "pred_saturation": 0.5, "min_green": 15, "max_green": 45, "capacity": 80}
     ]
   }
 }【/cycle_predict_input_json】
 
 Task (must complete):
-Mainly based on prediction.phase_waits pred_saturation (already calculated), output the final green light time for each phase in the next cycle (unit: seconds), while satisfying hard constraints."
+Mainly based on prediction.phase_waits pred_saturation (already calculated), output the final green light time for each phase in the next cycle (unit: seconds), while satisfying hard constraints.'
 ```
 
 ## Environment setup
