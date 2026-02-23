@@ -78,7 +78,7 @@ Mainly based on prediction.phase_waits pred_saturation (already calculated), out
 
 Field descriptions (meaning only):
 - prediction.phase_waits[*].min_green / max_green: seconds
-- prediction.phase_waits[*].pred_saturation: predicted saturation (pred_wait / capacity), where pred_wait is the predicted number of waiting vehicles for this phase in the next cycle, which can be computed using time-series forecasting models such as [LightGBM](https://github.com/microsoft/LightGBM) based on historical traffic data.
+- prediction.phase_waits[*].pred_saturation: predicted saturation (pred_wait / capacity)
 - prediction.phase_waits[*].capacity: phase capacity (vehicle capacity)
 
 Hard constraints (must satisfy):
@@ -94,7 +94,7 @@ Output format:
 2) Array elements must be objects: {"phase_id": <int>, "final": <int>}; no other fields allowed.
 ```
 
-**Input format**: JSON wrapped in `【cycle_predict_input_json】...【/cycle_predict_input_json】` tags, containing `prediction.phase_waits` — an array of per-phase objects with `phase_id`, `pred_saturation`, `min_green`, `max_green`, and `capacity`.
+**Input format**: JSON wrapped in `【cycle_predict_input_json】...【/cycle_predict_input_json】` tags, containing `prediction.phase_waits` — an array of per-phase objects with `phase_id`, `pred_saturation`, `min_green`, `max_green`, and `capacity`. Here `pred_saturation = pred_wait / capacity`, where `pred_wait` is the predicted number of waiting vehicles for this phase in the next cycle, which can be computed using time-series forecasting models such as [LightGBM](https://github.com/microsoft/LightGBM) based on historical traffic data.
 
 **Output format**: A JSON array of objects `[{"phase_id": <int>, "final": <int>}, ...]`, where `final` is the allocated green time in integer seconds for each phase.
 
