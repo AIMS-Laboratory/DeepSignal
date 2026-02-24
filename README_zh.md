@@ -165,7 +165,7 @@ $$
 | 模型 | 平均饱和度 | 平均累积排队长度 (veh⋅min) | 平均车通量（veh/5min） | 平均响应时间(s) |
 |:---:|:---:|:---:|:---:|:---:|
 | [`GPT-OSS-20B（thinking）`](https://huggingface.co/openai/gpt-oss-20b) | 0.380 | 14.088 | 77.910 | 6.768 |
-| **DeepSignal-Phase-4B (Ours)** | 0.422 | 15.703 | **79.883** | 2.131 |
+| **DeepSignal-Phase-4B (thinking, Ours)** | 0.422 | 15.703 | **79.883** | 2.131 |
 | [`Qwen3-30B-A3B`](https://huggingface.co/Qwen/Qwen3-VL-30B-A3B-Instruct) | 0.431 | 17.046 | 79.059 | 2.727 |
 | [`Qwen3-4B`](https://huggingface.co/Qwen/Qwen3-4B-Instruct-2507) | 0.466 | 57.699 | 75.712 | 1.994 |
 | Max Pressure | 0.465 | 23.022 | 77.236 | ** |
@@ -175,23 +175,23 @@ $$
 `**`：Max Pressure 是一种信号配时优化的固定算法，并非大模型，因此指标统计中忽略其平均响应时间的计算；该指标仅针对利用大模型进行信号配时优化的场景。  
 `***`：LightGPT-8B-Llama3 的平均响应时间仅在成功返回的样本上统计。LightGPT-8B-Llama3 支持 tool call，通常需要配合 [LLMTSCS](https://github.com/usail-hkust/LLMTSCS?tab=readme-ov-file) 所示的仿真平台和程序进行使用；在我们的仿真平台和场景下，它的响应成功率不高，导致表现有所下降。
 
-**结论**：带 thinking 的模型（如 GPT-OSS-20B）在控制效果上往往更强，但通常会带来更长的响应时间；在 **Non-Thinking** 的大模型基线中，**DeepSignal-Phase-4B** 在我们的评估中表现最佳。
+**结论**：在所有 thinking 模型中，**DeepSignal-Phase-4B** 以仅 2.131s 的响应时间实现了最高的车通量（79.883 veh/5min）。GPT-OSS-20B 的饱和度最优（0.380）但响应时间更长（6.768s）。
 
 ### CyclePlan 模型评估对比表 $^{*}$
 
-| 模型 | 格式成功率 (%) | 平均排队车辆数 | 每辆车平均延误 (s) | 车通量 (veh/min) |
-|:---:|:---:|:---:|:---:|:---:|
-| **DeepSignal-CyclePlan-4B-V1 F16 (Ours)** | **100.0** | **3.504** | **27.747** | **8.611** |
-| [`GLM-4.7-Flash`](https://huggingface.co/zai-org/glm-4.7-flash) | 100.0 | 7.323 | 29.422 | 8.567 |
-| DeepSignal-CyclePlan-4B-V1 Q4_K_M (Ours) | 98.1 | 4.783 | 29.891 | 7.722 |
-| [`Qwen3-30B-A3B`](https://huggingface.co/Qwen/Qwen3-30B-A3B-2507) | 97.1 | 6.938 | 31.135 | 7.578 |
-| [`LightGPT-8B-Llama3`](https://huggingface.co/lightgpt/LightGPT-8B-Llama3) | 68.0 | 5.026 | 31.266 | 7.380 |
-| [`GPT-OSS-20B`](https://huggingface.co/openai/gpt-oss-20b) | 65.4 | 6.289 | 31.947 | 7.247 |
-| [`Qwen3-4B (thinking)`](https://huggingface.co/Qwen/Qwen3-4B-Instruct-2507) | 54.1 | 10.060 | 48.895 | 7.096 |
+| 模型 | 格式成功率 (%) | 平均排队车辆数 | 每辆车平均延误 (s) | 车通量 (veh/min) | 平均响应时间 (s) |
+|:---:|:---:|:---:|:---:|:---:|:---:|
+| **DeepSignal-CyclePlan-4B-V1 F16 (thinking, Ours)** | **100.0** | **3.504** | **27.747** | **8.611** | 4.351 |
+| [`GLM-4.7-Flash (thinking)`](https://huggingface.co/zai-org/glm-4.7-flash) | 100.0 | 7.323 | 29.422 | 8.567 | 36.388 |
+| DeepSignal-CyclePlan-4B-V1 Q4_K_M (thinking, Ours) | 98.1 | 4.783 | 29.891 | 7.722 | 1.674 |
+| [`Qwen3-30B-A3B`](https://huggingface.co/Qwen/Qwen3-30B-A3B-2507) | 97.1 | 6.938 | 31.135 | 7.578 | 7.885 |
+| [`LightGPT-8B-Llama3`](https://huggingface.co/lightgpt/LightGPT-8B-Llama3) | 68.0 | 5.026 | 31.266 | 7.380 | 167.373 |
+| [`GPT-OSS-20B (thinking)`](https://huggingface.co/openai/gpt-oss-20b) | 65.4 | 6.289 | 31.947 | 7.247 | 4.919 |
+| [`Qwen3-4B (thinking)`](https://huggingface.co/Qwen/Qwen3-4B-Instruct-2507) | 54.1 | 10.060 | 48.895 | 7.096 | 122.333 |
 
 `*`：每个仿真场景总时长为 60 min。我们先去除前 **5 min** 的 warm-up（预热）阶段，然后使用紧随其后的 **20 min**（即第 5–25 分钟）数据计算指标。所有评估均在 **Mac Studio M3 Ultra** 上进行。
 
-**结论**：DeepSignal-CyclePlan-4B-V1（F16）在所有评估模型中实现了 100% 的格式成功率、最低的平均排队车辆数（3.504）和最高的车通量（8.611 veh/min）。Q4_K_M 量化版本在保持 98.1% 格式成功率的同时提供更快的推理速度。
+**结论**：DeepSignal-CyclePlan-4B-V1（F16）在所有评估模型中实现了 100% 的格式成功率、最低的平均排队车辆数（3.504）和最高的车通量（8.611 veh/min）。Q4_K_M 量化版本在保持 98.1% 格式成功率的同时，拥有最快的响应时间（1.674s）。
 
 ### CyclePlan 评估指标说明
 
@@ -201,6 +201,7 @@ $$
 - **平均排队车辆数**：所有相位和时间步长中排队等待车辆的平均数量。
 - **每辆车平均延误**：每辆车在交叉口经历的平均延误时间（秒）。
 - **车通量 (veh/min)**：每分钟通过交叉口的车辆数（原始值 × 60 换算）。
+- **平均响应时间**（s；仅大模型）：模型生成响应的平均时间。
 
 ## 某城市某交叉口大模型配时优化实际效果对比
 

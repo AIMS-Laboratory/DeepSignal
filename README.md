@@ -144,6 +144,7 @@ For **CyclePlan model** evaluation, we use the following additional metrics:
 - **Avg Queue Vehicles**: The average number of vehicles waiting in queue across all phases and time steps.
 - **Avg Delay per Vehicle**: The average delay time in seconds experienced per vehicle at the intersection.
 - **Throughput (veh/min)**: The number of vehicles passing through the intersection per minute (computed as raw throughput × 60).
+- **Avg Response Time** (s; LLM-only): The average time for the model to generate a response.
 
 #### Metric computation (formulas)
 
@@ -172,7 +173,7 @@ $$
 | Model | Avg Saturation | Avg Cumulative Queue Length (veh⋅min) | Avg Throughput (veh/5min) | Avg Response Time (s) |
 |:---:|:---:|:---:|:---:|:---:|
 | [`GPT-OSS-20B (thinking)`](https://huggingface.co/openai/gpt-oss-20b) | 0.380 | 14.088 | 77.910 | 6.768 |
-| **DeepSignal-Phase-4B (Ours)** | 0.422 | 15.703 | **79.883** | 2.131 |
+| **DeepSignal-Phase-4B (thinking, Ours)** | 0.422 | 15.703 | **79.883** | 2.131 |
 | [`Qwen3-30B-A3B`](https://huggingface.co/Qwen/Qwen3-VL-30B-A3B-Instruct) | 0.431 | 17.046 | 79.059 | 2.727 |
 | [`Qwen3-4B`](https://huggingface.co/Qwen/Qwen3-4B-Instruct-2507) | 0.466 | 57.699 | 75.712 | 1.994 |
 | Max Pressure | 0.465 | 23.022 | 77.236 | ** |
@@ -182,23 +183,23 @@ $$
 `**`: Max Pressure is a fixed signal-timing optimization algorithm (not an LLM), so we omit its Avg Response Time; this metric is only defined for LLM-based signal-timing optimization.  
 `***`: For LightGPT-8B-Llama3, Avg Response Time is computed using only the successful responses. Note that LightGPT-8B-Llama3 includes tool calls, and typically needs to be used together with the simulation platform and programs described in [LLMTSCS](https://github.com/usail-hkust/LLMTSCS?tab=readme-ov-file). In our simulation scenarios, the success rate of valid LLM responses is not high, which could lead to lower performance.
 
-**Conclusion**: Thinking-enabled models (e.g., GPT-OSS-20B) can achieve better control performance, but typically incur higher response latency. Among **non-thinking** LLM baselines, **DeepSignal-4B** is the best-performing model in our evaluation.
+**Conclusion**: Among thinking-enabled models, **DeepSignal-Phase-4B** achieves the highest throughput (79.883 veh/5min) with a response time of only 2.131s. GPT-OSS-20B achieves the best saturation (0.380) but with higher response latency (6.768s).
 
 ### Performance Metrics Comparison by Model (CyclePlan) $^{*}$
 
-| Model | Format Success Rate (%) | Avg Queue Vehicles | Avg Delay per Vehicle (s) | Throughput (veh/min) |
-|:---:|:---:|:---:|:---:|:---:|
-| **DeepSignal-CyclePlan-4B-V1 F16 (Ours)** | **100.0** | **3.504** | **27.747** | **8.611** |
-| [`GLM-4.7-Flash`](https://huggingface.co/zai-org/glm-4.7-flash) | 100.0 | 7.323 | 29.422 | 8.567 |
-| DeepSignal-CyclePlan-4B-V1 Q4_K_M (Ours) | 98.1 | 4.783 | 29.891 | 7.722 |
-| [`Qwen3-30B-A3B`](https://huggingface.co/Qwen/Qwen3-30B-A3B-2507) | 97.1 | 6.938 | 31.135 | 7.578 |
-| [`LightGPT-8B-Llama3`](https://huggingface.co/lightgpt/LightGPT-8B-Llama3) | 68.0 | 5.026 | 31.266 | 7.380 |
-| [`GPT-OSS-20B`](https://huggingface.co/openai/gpt-oss-20b) | 65.4 | 6.289 | 31.947 | 7.247 |
-| [`Qwen3-4B (thinking)`](https://huggingface.co/Qwen/Qwen3-4B-Instruct-2507) | 54.1 | 10.060 | 48.895 | 7.096 |
+| Model | Format Success Rate (%) | Avg Queue Vehicles | Avg Delay per Vehicle (s) | Throughput (veh/min) | Avg Response Time (s) |
+|:---:|:---:|:---:|:---:|:---:|:---:|
+| **DeepSignal-CyclePlan-4B-V1 F16 (thinking, Ours)** | **100.0** | **3.504** | **27.747** | **8.611** | 4.351 |
+| [`GLM-4.7-Flash (thinking)`](https://huggingface.co/zai-org/glm-4.7-flash) | 100.0 | 7.323 | 29.422 | 8.567 | 36.388 |
+| DeepSignal-CyclePlan-4B-V1 Q4_K_M (thinking, Ours) | 98.1 | 4.783 | 29.891 | 7.722 | 1.674 |
+| [`Qwen3-30B-A3B`](https://huggingface.co/Qwen/Qwen3-30B-A3B-2507) | 97.1 | 6.938 | 31.135 | 7.578 | 7.885 |
+| [`LightGPT-8B-Llama3`](https://huggingface.co/lightgpt/LightGPT-8B-Llama3) | 68.0 | 5.026 | 31.266 | 7.380 | 167.373 |
+| [`GPT-OSS-20B (thinking)`](https://huggingface.co/openai/gpt-oss-20b) | 65.4 | 6.289 | 31.947 | 7.247 | 4.919 |
+| [`Qwen3-4B (thinking)`](https://huggingface.co/Qwen/Qwen3-4B-Instruct-2507) | 54.1 | 10.060 | 48.895 | 7.096 | 122.333 |
 
 `*`: Each simulation scenario runs for 60 minutes. We discard the first **5 minutes** as warm-up, then compute metrics over the next **20 minutes** (minute 5 to 25). All evaluations are conducted on a **Mac Studio M3 Ultra**.
 
-**Conclusion**: DeepSignal-CyclePlan-4B-V1 (F16) achieves a 100% format success rate, the lowest average queue vehicles (3.504), and the highest throughput (8.611 veh/min) among all evaluated models. The Q4_K_M quantized version maintains strong performance with 98.1% format success rate while offering faster inference.
+**Conclusion**: DeepSignal-CyclePlan-4B-V1 (F16) achieves a 100% format success rate, the lowest average queue vehicles (3.504), and the highest throughput (8.611 veh/min) among all evaluated models. The Q4_K_M quantized version maintains strong performance with 98.1% format success rate while offering the fastest response time (1.674s).
 
 ## Real-world Deployment Comparison
 
