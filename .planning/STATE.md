@@ -11,7 +11,7 @@ See: .planning/PROJECT.md (updated 2026-02-24)
 
 Phase: v1.0 complete
 Status: Milestone v1.0 shipped
-Last activity: 2026-02-24 - Completed quick task 2: 生成模型性能对比图并嵌入 README
+Last activity: 2026-02-24 - Completed quick task 3: 将 README 中 CyclePlan 预测模型示例由 LightGBM 改为 LSTM、TCN
 
 Progress: [██████████] 100% (v1.0)
 
@@ -48,9 +48,10 @@ None
 |---|-------------|------|--------|-----------|
 | 1 | 修正 LightGBM 模型类型描述为预测模型 | 2026-02-24 | 572dccd | [1-readme-lightgbm](./quick/1-readme-lightgbm/) |
 | 2 | 生成模型性能对比图并嵌入中英文 README | 2026-02-24 | 1fc1313 | [2-readme](./quick/2-readme/) |
+| 3 | 将 README 中 CyclePlan 预测模型示例由 LightGBM 改为 LSTM、TCN | 2026-02-24 | 181b0b3 | [3-readme-lightgbm-lstm-tcn](./quick/3-readme-lightgbm-lstm-tcn/) |
 
 ## Session Continuity
 
 Last session: 2026-02-24
-Stopped at: Completed quick-2 - model performance comparison charts embedded in README
+Stopped at: Completed quick-3 - README CyclePlan model examples updated from LightGBM to LSTM/TCN
 Next step: /gsd:new-milestone for v1.1 planning
