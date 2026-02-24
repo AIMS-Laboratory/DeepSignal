@@ -185,6 +185,8 @@ $$
 
 **Conclusion**: Among thinking-enabled models, **DeepSignal-Phase-4B** achieves the highest throughput (79.883 veh/5min) with a response time of only 2.131s. GPT-OSS-20B achieves the best saturation (0.380) but with higher response latency (6.768s).
 
+![Phase Model Performance Comparison](images/phase_model_comparison.png)
+
 ### Performance Metrics Comparison by Model (CyclePlan) $^{*}$
 
 | Model | Format Success Rate (%) | Avg Queue Vehicles | Avg Delay per Vehicle (s) | Throughput (veh/min) | Avg Response Time (s) |
@@ -200,6 +202,8 @@ $$
 `*`: Each simulation scenario runs for 60 minutes. We discard the first **5 minutes** as warm-up, then compute metrics over the next **20 minutes** (minute 5 to 25). All evaluations are conducted on a **Mac Studio M3 Ultra**.
 
 **Conclusion**: DeepSignal-CyclePlan-4B-V1 (F16) achieves a 100% format success rate, the lowest average queue vehicles (3.504), and the highest throughput (8.611 veh/min) among all evaluated models. The Q4_K_M quantized version maintains strong performance with 98.1% format success rate while offering the fastest response time (1.674s).
+
+![CyclePlan Model Performance Comparison](images/cycleplan_model_comparison.png)
 
 ## Real-world Deployment Comparison
 

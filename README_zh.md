@@ -177,6 +177,8 @@ $$
 
 **结论**：在所有 thinking 模型中，**DeepSignal-Phase-4B** 以仅 2.131s 的响应时间实现了最高的车通量（79.883 veh/5min）。GPT-OSS-20B 的饱和度最优（0.380）但响应时间更长（6.768s）。
 
+![Phase 模型性能对比图](images/phase_model_comparison.png)
+
 ### CyclePlan 模型评估对比表 $^{*}$
 
 | 模型 | 格式成功率 (%) | 平均排队车辆数 | 每辆车平均延误 (s) | 车通量 (veh/min) | 平均响应时间 (s) |
@@ -192,6 +194,8 @@ $$
 `*`：每个仿真场景总时长为 60 min。我们先去除前 **5 min** 的 warm-up（预热）阶段，然后使用紧随其后的 **20 min**（即第 5–25 分钟）数据计算指标。所有评估均在 **Mac Studio M3 Ultra** 上进行。
 
 **结论**：DeepSignal-CyclePlan-4B-V1（F16）在所有评估模型中实现了 100% 的格式成功率、最低的平均排队车辆数（3.504）和最高的车通量（8.611 veh/min）。Q4_K_M 量化版本在保持 98.1% 格式成功率的同时，拥有最快的响应时间（1.674s）。
+
+![CyclePlan 模型性能对比图](images/cycleplan_model_comparison.png)
 
 ### CyclePlan 评估指标说明
 
