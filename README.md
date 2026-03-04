@@ -36,7 +36,7 @@ DeepSignal-Phase-4B-V1 is designed for **next signal-phase prediction**. Given t
 
 ```
 You are a traffic management expert. You can use your traffic knowledge to solve the traffic signal control task.
-Based on the given traffic scene and state, predict the next signal phase and its duration.
+Based on the given traffic scene and state, optimize the next signal phase and its duration.
 You must answer directly, the format must be: next signal phase: {number}, duration: {seconds} seconds
 where the number is the phase index (starting from 0) and the seconds is the duration (usually between 20-90 seconds).
 ```
