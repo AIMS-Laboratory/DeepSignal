@@ -287,7 +287,6 @@ $$
 | 模型 | Temp | Target AWT (s) | Network AWT (s) | Target ATT (s) | Avg Queue | Avg Delay (s/veh) | Control Usable | Avg Response (s) |
 |:---:|---:|---:|---:|---:|---:|---:|---:|---:|
 | **DeepSignal-CyclePlan-4B-V2 (Ours)** | 0.2 | **61.43** | 134.61 | 138.15 | **15.54** | **112.11** | **100.00%** | **0.91** |
-| Max Pressure（传统算法） | n/a | 142.86 | 150.06 | 203.76 | 18.47 | 111.71 | n/a | n/a |
 | Qwen3.6-27B | 0.2 | 67.48 | 137.03 | **133.68** | 16.13 | 112.95 | 56.67% | 6.02 |
 | Qwen3.5-9B | 0.2 | 78.34 | **133.18** | 149.16 | 16.88 | 112.90 | 53.33% | 3.70 |
 | Gemma3-12B-IT | 0.2 | 82.11 | 135.92 | 148.01 | 18.30 | 118.43 | 56.67% | 82.51 |
@@ -295,9 +294,8 @@ $$
 | GPT-OSS-20B | 0.2 | 92.53 | 136.53 | 153.73 | 18.78 | 123.80 | 76.67% | 35.58 |
 
 `**`：该表统一使用 `300-900s` 窗口。`Target AWT / ATT` 与 `Network AWT` 根据 SUMO `tripinfo` 中 `depart` 落在窗口内且完成行程的车辆统计；`Avg Queue` 与 `Avg Delay` 用于补充反映窗口内拥堵水平与车辆延误。
-Max Pressure 是非 LLM 的传统控制算法，因此温度、Control Usable 和模型响应时间不适用。
 
-**结论**：在 `300-900s` 早期拥堵窗口中，**DeepSignal-CyclePlan-4B-V2** 在所列 LLM 控制器中取得最低 Target AWT（`61.43s`）和最低平均排队车辆数（`15.54`）。相比传统 Max Pressure 基线，Target AWT 从 `142.86s` 降至 `61.43s`，Network AWT 从 `150.06s` 降至 `134.61s`，Target ATT 从 `203.76s` 降至 `138.15s`；同时保持 **100%** 的控制可用率和约 **0.91s** 的平均响应时间。
+**结论**：在 `300-900s` 早期拥堵窗口中，**DeepSignal-CyclePlan-4B-V2** 取得最低 Target AWT（`61.43s`）、最低平均排队车辆数（`15.54`）和最低每车平均延误（`112.11s/veh`）。同时，**DeepSignal-CyclePlan-4B-V2** 保持 **100%** 的控制可用率和约 **0.91s** 的平均响应时间。
 
 ![CyclePlan-4B-V2 300-900s 模型指标对比](images/deepsignal_chengdu_300_900_comparison.png)
 

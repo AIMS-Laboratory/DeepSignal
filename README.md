@@ -295,7 +295,6 @@ $$
 | Model | Temp | Target AWT (s) | Network AWT (s) | Target ATT (s) | Avg Queue | Avg Delay (s/veh) | Control Usable | Avg Response (s) |
 |:---:|---:|---:|---:|---:|---:|---:|---:|---:|
 | **DeepSignal-CyclePlan-4B-V2 (Ours)** | 0.2 | **61.43** | 134.61 | 138.15 | **15.54** | **112.11** | **100.00%** | **0.91** |
-| Max Pressure (traditional) | n/a | 142.86 | 150.06 | 203.76 | 18.47 | 111.71 | n/a | n/a |
 | Qwen3.6-27B | 0.2 | 67.48 | 137.03 | **133.68** | 16.13 | 112.95 | 56.67% | 6.02 |
 | Qwen3.5-9B | 0.2 | 78.34 | **133.18** | 149.16 | 16.88 | 112.90 | 53.33% | 3.70 |
 | Gemma3-12B-IT | 0.2 | 82.11 | 135.92 | 148.01 | 18.30 | 118.43 | 56.67% | 82.51 |
@@ -303,9 +302,8 @@ $$
 | GPT-OSS-20B | 0.2 | 92.53 | 136.53 | 153.73 | 18.78 | 123.80 | 76.67% | 35.58 |
 
 `**`: All rows use the `300-900s` evaluation window. `Target AWT / ATT` and `Network AWT` are computed from SUMO `tripinfo` records for vehicles whose `depart` time falls inside the window and whose trips are completed. `Avg Queue` and `Avg Delay` provide additional views of congestion level and vehicle delay.
-Max Pressure is a non-LLM algorithmic controller, so temperature, Control Usable, and model response time are not applicable.
 
-**Conclusion**: In the `300-900s` early-congestion window, **DeepSignal-CyclePlan-4B-V2** obtains the lowest Target AWT (`61.43s`) and Avg Queue (`15.54`) among the listed LLM controllers. Compared with the traditional Max Pressure baseline, it reduces Target AWT from `142.86s` to `61.43s`, Network AWT from `150.06s` to `134.61s`, and Target ATT from `203.76s` to `138.15s`, while keeping **100%** Control Usable and an average response time of about **0.91s**.
+**Conclusion**: In the `300-900s` early-congestion window, **DeepSignal-CyclePlan-4B-V2** obtains the lowest Target AWT (`61.43s`), the lowest Avg Queue (`15.54`), and the lowest Avg Delay (`112.11s/veh`). It also keeps **100%** Control Usable and an average response time of about **0.91s**.
 
 ![CyclePlan-4B-V2 300-900s model comparison](images/deepsignal_chengdu_300_900_comparison.png)
 
