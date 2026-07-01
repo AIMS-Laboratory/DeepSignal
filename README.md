@@ -2,14 +2,15 @@
 
 [中文 README](README_zh.md)
 
-DeepSignal is our suite of fine-tuned large language models for **traffic-signal control**. The current releases include two models:
+DeepSignal is our suite of fine-tuned large language models for **traffic-signal control**. The current releases include three models:
 
 - **DeepSignal-Phase-4B-V1** — next signal-phase prediction (predicts which phase to activate next and for how long)
 - **DeepSignal-CyclePlan-4B-V1** — signal-cycle timing optimization (outputs green-time allocation for every phase in the upcoming cycle)
+- **DeepSignal-CyclePlan-4B-V2** — updated CyclePlan release with stronger executable timing-plan generation, faster response, and improved queue/delay behavior
 
-Both models are available on Hugging Face under the same repository:
+All models are available on Hugging Face under the same repository:
 
-- **Model (Hugging Face)**: [`AIMS2025/DeepSignal`](https://huggingface.co/AIMS2025/DeepSignal) (contains both Phase and CyclePlan model files)
+**Model (Hugging Face)**: [`AIMS2025/DeepSignal`](https://huggingface.co/AIMS2025/DeepSignal) (contains both Phase and CyclePlan model files)
 
 This repository also contains a SUMO-based simulation stack and an MCP server to run closed-loop interaction between the LLM and traffic simulations, to evaluate the performance of various baseline signal control models/algorithms. Currently, this repository does not include the code for fine-tuning the large language model.
 
@@ -98,10 +99,72 @@ Output format:
 
 **Output format**: A JSON array of objects `[{"phase_id": <int>, "final": <int>}, ...]`, where `final` is the allocated green time in integer seconds for each phase.
 
+## DeepSignal-CyclePlan-4B-V2
+
+DeepSignal-CyclePlan-4B-V2 is an updated CyclePlan release for local inference with `llama.cpp`, LM Studio, and other GGUF-compatible runtimes. It keeps the same cycle-level control objective as V1: given phase-level predicted traffic states and green-time constraints for an intersection, it outputs the final green-light duration for every phase in the next signal cycle.
+
+This release follows the Qwen3 4B architecture family and is intended for SUMO simulation, traffic signal timing research, and local controller prototyping. During evaluation, the model uses the DeepSignal prompt style: a short reasoning block followed by a strict JSON timing plan inside `<SOLUTION>...</SOLUTION>`.
+
+**System Prompt:**
+
+```
+You are a traffic signal timing optimization expert.
+```
+
+**User Prompt (template):**
+
+```
+【cycle_predict_input_json】{
+  "prediction": {
+    "as_of": "<timestamp>",
+    "phase_waits": [
+      {
+        "phase_id": <int>,
+        "pred_wait": <float>,
+        "pred_saturation": <float>,
+        "min_green": <int>,
+        "max_green": <int>,
+        "capacity": <int>
+      }
+      // ... more phases
+    ]
+  }
+}【/cycle_predict_input_json】
+
+Task (must complete):
+Based on prediction.phase_waits[*].pred_saturation, output the final green time final for each phase in the next cycle (unit: seconds), while satisfying all hard constraints.
+
+Input field descriptions:
+- prediction.phase_waits[*].min_green / max_green: lower and upper green-time bounds, in seconds.
+- prediction.phase_waits[*].pred_wait: predicted waiting vehicles.
+- prediction.phase_waits[*].pred_saturation: predicted saturation (pred_wait / capacity).
+- prediction.phase_waits[*].capacity: phase capacity, for reference only.
+
+Hard constraints (must satisfy):
+1) Fixed phase order: consider and output strictly in the order of prediction.phase_waits; no skipping and no reordering.
+2) Per-phase constraint: final must satisfy prediction.phase_waits[*].min_green <= final <= prediction.phase_waits[*].max_green.
+3) final must be an integer in seconds.
+
+Decision hint (non-hard constraint):
+- The final decision should be based primarily on pred_saturation; capacity is for reference only.
+
+Output requirements (must strictly follow):
+1) First output <start_working_out>...</end_working_out>; include only the reasoning process there, not the final JSON.
+2) Then output <SOLUTION>...</SOLUTION>; inside <SOLUTION>, only the final JSON is allowed.
+3) JSON top level must be an object/dict; keys are phase IDs as strings and values are integer seconds. Keys must use double quotes.
+4) The JSON must cover all phase IDs in prediction.phase_waits, with no missing or extra phases.
+5) Do not output any text outside <start_working_out>...</end_working_out> and <SOLUTION>...</SOLUTION>.
+```
+
+**Input format**: JSON wrapped in `【cycle_predict_input_json】...【/cycle_predict_input_json】` tags, containing `prediction.phase_waits` with `phase_id`, `pred_wait`, `pred_saturation`, `min_green`, `max_green`, and `capacity`. Here `pred_saturation = pred_wait / capacity`.
+
+**Output format**: A reasoning block followed by a JSON object inside `<SOLUTION>...</SOLUTION>`, for example `<SOLUTION>{"1": 55, "2": 30}</SOLUTION>`, where each key is a phase ID string and each value is the allocated green time in integer seconds.
+
 ## Changelog
 
 - **2025-12-16**: Released DeepSignal-4B-V1 (next signal-phase prediction model).
 - **2026-02-22**: Renamed the original model to **DeepSignal-Phase-4B-V1**; released **DeepSignal-CyclePlan-4B-V1** (signal-cycle timing optimization model).
+- **2026-07-01**: Released **DeepSignal-CyclePlan-4B-V2**.
 
 ## Scenarios (training vs hold-out evaluation)
 
@@ -187,7 +250,7 @@ $$
 
 ![Phase Model Performance Comparison](images/phase_model_comparison.png)
 
-### Performance Metrics Comparison by Model (CyclePlan) $^{*}$
+### CyclePlan-4B-V1 Model Evaluation Comparison $^{*}$
 
 | Model | Format Success Rate (%) | Avg Queue Vehicles | Avg Delay per Vehicle (s) | Throughput (veh/min) | Avg Response Time (s) |
 |:---:|:---:|:---:|:---:|:---:|:---:|
@@ -204,6 +267,47 @@ $$
 **Conclusion**: DeepSignal-CyclePlan-4B-V1 (F16) achieves a 100% format success rate, the lowest average queue vehicles (3.504), and the highest throughput (8.611 veh/min) among all evaluated models. The Q4_K_M quantized version maintains strong performance with 98.1% format success rate while offering the fastest response time (1.674s).
 
 ![CyclePlan Model Performance Comparison](images/cycleplan_model_comparison.png)
+
+### CyclePlan-4B-V2 Model Evaluation Comparison $^{**}$
+
+We evaluate `DeepSignal-CyclePlan-4B-V2` in a SUMO closed-loop traffic simulation. At each decision cycle, the model receives predicted phase-level waiting vehicles, predicted saturation, and phase-specific minimum and maximum green constraints. The generated timing plan is then applied to SUMO, and the simulation records both traffic-operation metrics and model-execution metrics. All evaluations were conducted on an **NVIDIA GeForce RTX 5090 GPU**.
+
+This comparison uses the `300-900s` evaluation window and model temperature `0.2` to inspect early vehicle-level waiting behavior, queue level, travel time, and control-output stability.
+
+Additional metric definitions for this V2 evaluation:
+
+- **Target AWT**: average waiting time of vehicles associated with the target intersections, computed from SUMO `tripinfo`, in seconds. Lower is better.
+- **Network AWT**: average waiting time of completed vehicles over the whole network, computed from SUMO `tripinfo`, in seconds. Lower is better.
+- **Target ATT**: average travel time of vehicles associated with the target intersections, computed from completed-trip duration, in seconds. Lower is better.
+- **Network ATT**: average travel time of completed vehicles over the whole network, in seconds. Lower is better.
+- **Control Usable**: percentage of model outputs that can be parsed, pass timing-constraint checks, and be used as executable control plans. Higher is better.
+
+Let $\mathcal{V}_{target}$ be the set of vehicles associated with the target intersections that depart within the evaluation window and complete their trips. Let $\mathcal{V}_{network}$ be the set of all completed network vehicles satisfying the same window condition. $w_i$ is the accumulated waiting time of vehicle $i$ recorded in SUMO `tripinfo`, and $\tau_i=a_i-d_i$ is its completed-trip duration.
+
+$$
+\mathrm{TargetAWT}=\frac{\sum_{i \in \mathcal{V}_{target}} w_i}{|\mathcal{V}_{target}|}, \quad
+\mathrm{NetworkAWT}=\frac{\sum_{i \in \mathcal{V}_{network}} w_i}{|\mathcal{V}_{network}|}
+$$
+
+$$
+\mathrm{TargetATT}=\frac{\sum_{i \in \mathcal{V}_{target}} \tau_i}{|\mathcal{V}_{target}|}, \quad
+\mathrm{NetworkATT}=\frac{\sum_{i \in \mathcal{V}_{network}} \tau_i}{|\mathcal{V}_{network}|}
+$$
+
+| Model | Temp | Target AWT (s) | Network AWT (s) | Target ATT (s) | Network ATT (s) | Avg Queue | Avg Delay (s/veh) | Throughput (veh/min) | Control Usable | Avg Response (s) |
+|:---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| **DeepSignal-CyclePlan-4B-V2 (Ours)** | 0.2 | **61.43** | 134.61 | 138.15 | 317.87 | **15.54** | **112.11** | 40.20 | **100.00%** | **0.91** |
+| Qwen3.6-27B | 0.2 | 67.48 | 137.03 | **133.68** | 319.04 | 16.13 | 112.95 | 38.57 | 56.67% | 6.02 |
+| Qwen3.5-9B | 0.2 | 78.34 | **133.18** | 149.16 | **314.67** | 16.88 | 112.90 | **40.27** | 53.33% | 3.70 |
+| Gemma3-12B-IT | 0.2 | 82.11 | 135.92 | 148.01 | 316.81 | 18.30 | 118.43 | 40.12 | 56.67% | 82.51 |
+| Qwen3-4B | 0.2 | 98.10 | 142.21 | 160.70 | 321.92 | 19.93 | 129.70 | 38.20 | 20.00% | 40.84 |
+| GPT-OSS-20B | 0.2 | 92.53 | 136.53 | 153.73 | 316.32 | 18.78 | 123.80 | 38.25 | 76.67% | 35.58 |
+
+`**`: All rows use the `300-900s` evaluation window. `Target AWT / ATT` and `Network AWT / ATT` are computed from SUMO `tripinfo` records for vehicles whose `depart` time falls inside the window and whose trips are completed. `Avg Queue`, `Avg Delay`, and `Throughput` provide additional views of congestion level, vehicle delay, and service efficiency.
+
+**Conclusion**: In the `300-900s` early-congestion window, **DeepSignal-CyclePlan-4B-V2** obtains the lowest Target AWT (`61.43s`), the lowest Avg Queue (`15.54`), and the lowest Avg Delay (`112.11s/veh`). It also keeps **100%** Control Usable and an average response time of about **0.91s**.
+
+![CyclePlan-4B-V2 300-900s model comparison](images/deepsignal_chengdu_300_900_comparison.png)
 
 ## Real-world Deployment Comparison
 
@@ -269,7 +373,7 @@ Full video demonstration can be found on [Youtube](https://www.youtube.com/watch
 
 ## Model files (GGUF) and local inference
 
-If you are looking for GGUF files for local inference (`llama.cpp` / LM Studio), check the model card in Hugging Face and the packaging notes under `hf/`.
+If you are looking for GGUF files for local inference (`llama.cpp` / LM Studio), check the Hugging Face model card.
 
 ### DeepSignal-Phase-4B-V1
 
@@ -309,6 +413,54 @@ Then, place your final plan between <SOLUTION> and </SOLUTION>.
 
 Task (must complete):
 Mainly based on prediction.phase_waits pred_saturation (already calculated), output the final green light time for each phase in the next cycle (unit: seconds), while satisfying hard constraints.'
+```
+
+### DeepSignal-CyclePlan-4B-V2
+
+The GGUF file for DeepSignal-CyclePlan-4B-V2 is distributed through Hugging Face:
+
+```bash
+huggingface-cli download AIMS2025/DeepSignal-CyclePlan-4B-V2 \
+  DeepSignal-CyclePlan-4B-V2-F16.gguf \
+  --local-dir .
+```
+
+Example (llama.cpp):
+
+```bash
+llama-cli -m DeepSignal-CyclePlan-4B-V2-F16.gguf \
+  --ctx-size 4096 \
+  --temp 0.2 \
+  --n-predict 2048 \
+  -p 'You are a traffic signal timing optimization expert.
+【cycle_predict_input_json】{
+  "prediction": {
+    "as_of": "2026-04-27 00:02:27",
+    "phase_waits": [
+      {"phase_id": 1, "pred_wait": 0.4, "pred_saturation": 0.0083, "min_green": 50, "max_green": 80, "capacity": 48},
+      {"phase_id": 2, "pred_wait": 1.0, "pred_saturation": 0.0250, "min_green": 20, "max_green": 45, "capacity": 40}
+    ]
+  }
+}【/cycle_predict_input_json】
+
+Task (must complete):
+Based on prediction.phase_waits[*].pred_saturation, output the final green time final for each phase in the next cycle (unit: seconds), while satisfying all hard constraints.
+
+Input field descriptions:
+- prediction.phase_waits[*].min_green / max_green: lower and upper green-time bounds, in seconds.
+- prediction.phase_waits[*].pred_wait: predicted waiting vehicles.
+- prediction.phase_waits[*].pred_saturation: predicted saturation (pred_wait / capacity).
+- prediction.phase_waits[*].capacity: phase capacity, for reference only.
+
+Hard constraints (must satisfy):
+1) Fixed phase order: consider and output strictly in the order of prediction.phase_waits; no skipping and no reordering.
+2) Per-phase constraint: final must satisfy prediction.phase_waits[*].min_green <= final <= prediction.phase_waits[*].max_green.
+3) final must be an integer in seconds.
+
+Output requirements (must strictly follow):
+1) First output <start_working_out>...</end_working_out>; include only the reasoning process there, not the final JSON.
+2) Then output <SOLUTION>...</SOLUTION>; inside <SOLUTION>, only the final JSON is allowed.
+3) JSON top level must be an object/dict; keys are phase IDs as strings and values are integer seconds.'
 ```
 
 ## Environment setup
