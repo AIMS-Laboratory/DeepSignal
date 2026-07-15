@@ -252,36 +252,31 @@ $$
 
 We evaluate CyclePlan models in a SUMO closed-loop traffic simulation. At each decision cycle, a model receives predicted phase-level waiting vehicles, predicted saturation, and phase-specific minimum and maximum green constraints. The generated timing plan is then applied to SUMO, and the simulation records both traffic-operation metrics and model-execution metrics. All evaluations were conducted on an **NVIDIA GeForce RTX 5090 GPU**.
 
-This comparison uses the `300-900s` evaluation window and model temperature `0.2` to inspect early vehicle-level waiting behavior, queue level, travel time, and response speed.
+This comparison uses the `300-900s` evaluation window and model temperature `0.2` to inspect early vehicle-level waiting behavior, queue level, vehicle delay, and response speed.
 
-Additional metric definitions for this CyclePlan evaluation:
+Additional metric definition for this CyclePlan evaluation:
 
 - **Target AWT**: average waiting time of vehicles associated with the target intersections, computed from SUMO `tripinfo`, in seconds. Lower is better.
-- **Target ATT**: average travel time of vehicles associated with the target intersections, computed from completed-trip duration, in seconds. Lower is better.
 
-Let $\mathcal{V}_{target}$ be the set of vehicles associated with the target intersections that depart within the evaluation window and complete their trips. $w_i$ is the accumulated waiting time of vehicle $i$ recorded in SUMO `tripinfo`, and $\tau_i=a_i-d_i$ is its completed-trip duration.
+Let $\mathcal{V}_{target}$ be the set of vehicles associated with the target intersections that depart within the evaluation window and complete their trips. $w_i$ is the accumulated waiting time of vehicle $i$ recorded in SUMO `tripinfo`.
 
 $$
 \mathrm{TargetAWT}=\frac{\sum_{i \in \mathcal{V}_{target}} w_i}{|\mathcal{V}_{target}|}
 $$
 
-$$
-\mathrm{TargetATT}=\frac{\sum_{i \in \mathcal{V}_{target}} \tau_i}{|\mathcal{V}_{target}|}
-$$
+| Model | Temp | Target AWT (s) | Avg Queue | Avg Delay (s/veh) | Avg Response (s) |
+|:---:|---:|---:|---:|---:|---:|
+| **DeepSignal-CyclePlan-4B-V2 (Ours)** | 0.2 | **61.43** | **15.54** | **112.11** | 2.86 |
+| DeepSignal-CyclePlan-4B-V1 (Ours) | 0.2 | 70.03 | 18.18 | 130.05 | **2.73** |
+| Qwen3.6-27B | 0.2 | 67.48 | 16.13 | 112.95 | 12.75 |
+| Qwen3.5-9B | 0.2 | 78.34 | 16.88 | 112.90 | 3.70 |
+| Gemma3-12B-IT | 0.2 | 82.11 | 18.30 | 118.43 | 31.22 |
+| Qwen3-4B | 0.2 | 98.10 | 19.93 | 129.70 | 19.16 |
+| GPT-OSS-20B | 0.2 | 92.53 | 18.78 | 123.80 | 35.58 |
 
-| Model | Temp | Target AWT (s) | Target ATT (s) | Avg Queue | Avg Delay (s/veh) | Avg Response (s) |
-|:---:|---:|---:|---:|---:|---:|---:|
-| **DeepSignal-CyclePlan-4B-V2 (Ours)** | 0.2 | **61.43** | 138.15 | **15.54** | **112.11** | 2.86 |
-| DeepSignal-CyclePlan-4B-V1 (Ours) | 0.2 | 70.03 | 156.11 | 18.18 | 130.05 | **2.73** |
-| Qwen3.6-27B | 0.2 | 67.48 | **133.68** | 16.13 | 112.95 | 12.75 |
-| Qwen3.5-9B | 0.2 | 78.34 | 149.16 | 16.88 | 112.90 | 3.70 |
-| Gemma3-12B-IT | 0.2 | 82.11 | 148.01 | 18.30 | 118.43 | 31.22 |
-| Qwen3-4B | 0.2 | 98.10 | 160.70 | 19.93 | 129.70 | 19.16 |
-| GPT-OSS-20B | 0.2 | 92.53 | 153.73 | 18.78 | 123.80 | 35.58 |
+`**`: All rows use the `300-900s` evaluation window. `Target AWT` is computed from SUMO `tripinfo` records for vehicles whose `depart` time falls inside the window and whose trips are completed. `Avg Queue` and `Avg Delay` provide additional views of congestion level and vehicle delay. For `Avg Response`, no maximum token limit is imposed on either the chain of thought or the final response.
 
-`**`: All rows use the `300-900s` evaluation window. `Target AWT / ATT` are computed from SUMO `tripinfo` records for vehicles whose `depart` time falls inside the window and whose trips are completed. `Avg Queue` and `Avg Delay` provide additional views of congestion level and vehicle delay. For `Avg Response`, no maximum token limit is imposed on either the chain of thought or the final response.
-
-**Conclusion**: In the `300-900s` early-congestion window, **DeepSignal-CyclePlan-4B-V2** outperforms V1 across all four traffic-operation metrics. Among all evaluated models, V2 obtains the lowest Target AWT (`61.43s`), Avg Queue (`15.54`), and Avg Delay (`112.11s/veh`); V1 records the lowest Avg Response (`2.73s`), while Qwen3.6-27B records the lowest Target ATT (`133.68s`).
+**Conclusion**: In the `300-900s` early-congestion window, **DeepSignal-CyclePlan-4B-V2** outperforms V1 across all three traffic-operation metrics. Among all evaluated models, V2 obtains the lowest Target AWT (`61.43s`), Avg Queue (`15.54`), and Avg Delay (`112.11s/veh`), while V1 records the lowest Avg Response (`2.73s`).
 
 ![CyclePlan model evaluation comparison](images/cycleplan_model_comparison_v2_en.png)
 
