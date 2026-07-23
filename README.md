@@ -6,7 +6,7 @@ DeepSignal is our suite of fine-tuned large language models for **traffic-signal
 
 - **DeepSignal-Phase-4B-V1** — next signal-phase prediction (predicts which phase to activate next and for how long)
 - **DeepSignal-CyclePlan-4B-V1** — signal-cycle timing optimization (outputs green-time allocation for every phase in the upcoming cycle)
-- **DeepSignal-CyclePlan-4B-V2** — updated CyclePlan release with stronger executable timing-plan generation, faster response, and improved queue/delay behavior
+- **DeepSignal-CyclePlan-4B-V1.2** — updated CyclePlan release with stronger executable timing-plan generation, faster response, and improved queue/delay behavior
 
 All models are available on Hugging Face under the same repository:
 
@@ -99,9 +99,9 @@ Output format:
 
 **Output format**: A JSON array of objects `[{"phase_id": <int>, "final": <int>}, ...]`, where `final` is the allocated green time in integer seconds for each phase.
 
-## DeepSignal-CyclePlan-4B-V2
+## DeepSignal-CyclePlan-4B-V1.2
 
-DeepSignal-CyclePlan-4B-V2 is an updated CyclePlan release for local inference with `llama.cpp`, LM Studio, and other GGUF-compatible runtimes. It keeps the same cycle-level control objective as V1: given phase-level predicted traffic states and green-time constraints for an intersection, it outputs the final green-light duration for every phase in the next signal cycle.
+DeepSignal-CyclePlan-4B-V1.2 is an updated CyclePlan release for local inference with `llama.cpp`, LM Studio, and other GGUF-compatible runtimes. It keeps the same cycle-level control objective as V1: given phase-level predicted traffic states and green-time constraints for an intersection, it outputs the final green-light duration for every phase in the next signal cycle.
 
 This release follows the Qwen3 4B architecture family and is intended for SUMO simulation, traffic signal timing research, and local controller prototyping. During evaluation, the model uses the DeepSignal prompt style: a short reasoning block followed by a strict JSON timing plan inside `<SOLUTION>...</SOLUTION>`.
 
@@ -164,7 +164,7 @@ Output requirements (must strictly follow):
 
 - **2025-12-16**: Released DeepSignal-4B-V1 (next signal-phase prediction model).
 - **2026-02-22**: Renamed the original model to **DeepSignal-Phase-4B-V1**; released **DeepSignal-CyclePlan-4B-V1** (signal-cycle timing optimization model).
-- **2026-07-01**: Released **DeepSignal-CyclePlan-4B-V2**.
+- **2026-07-01**: Released **DeepSignal-CyclePlan-4B-V1.2**.
 
 ## Scenarios (training vs hold-out evaluation)
 
@@ -266,7 +266,7 @@ $$
 
 | Model | Temp | Target AWT (s) | Avg Queue | Avg Delay (s/veh) | Avg Response (s) |
 |:---:|---:|---:|---:|---:|---:|
-| **DeepSignal-CyclePlan-4B-V2 (Ours)** | 0.2 | **61.43** | **15.54** | **112.11** | 2.86 |
+| **DeepSignal-CyclePlan-4B-V1.2 (Ours)** | 0.2 | **61.43** | **15.54** | **112.11** | 2.86 |
 | DeepSignal-CyclePlan-4B-V1 (Ours) | 0.2 | 70.03 | 18.18 | 130.05 | **2.73** |
 | Qwen3.6-27B | 0.2 | 67.48 | 16.13 | 112.95 | 12.75 |
 | Qwen3.5-9B | 0.2 | 78.34 | 16.88 | 112.90 | 3.70 |
@@ -276,9 +276,9 @@ $$
 
 `**`: All rows use the `300-900s` evaluation window. `Target AWT` is computed from SUMO `tripinfo` records for vehicles whose `depart` time falls inside the window and whose trips are completed. `Avg Queue` and `Avg Delay` provide additional views of congestion level and vehicle delay. For `Avg Response`, no maximum token limit is imposed on either the chain of thought or the final response.
 
-**Conclusion**: In the `300-900s` early-congestion window, **DeepSignal-CyclePlan-4B-V2** outperforms V1 across all three traffic-operation metrics. Among all evaluated models, V2 obtains the lowest Target AWT (`61.43s`), Avg Queue (`15.54`), and Avg Delay (`112.11s/veh`), while V1 records the lowest Avg Response (`2.73s`).
+**Conclusion**: In the `300-900s` early-congestion window, **DeepSignal-CyclePlan-4B-V1.2** outperforms V1 across all three traffic-operation metrics. Among all evaluated models, V1.2 obtains the lowest Target AWT (`61.43s`), Avg Queue (`15.54`), and Avg Delay (`112.11s/veh`), while V1 records the lowest Avg Response (`2.73s`).
 
-![CyclePlan model evaluation comparison](images/cycleplan_model_comparison_v2_en.png)
+![CyclePlan model evaluation comparison](images/cycleplan_model_comparison_v1_2_en.png)
 
 ## Real-world Deployment Comparison
 
@@ -386,9 +386,9 @@ Task (must complete):
 Mainly based on prediction.phase_waits pred_saturation (already calculated), output the final green light time for each phase in the next cycle (unit: seconds), while satisfying hard constraints.'
 ```
 
-### DeepSignal-CyclePlan-4B-V2
+### DeepSignal-CyclePlan-4B-V1.2
 
-The GGUF file for DeepSignal-CyclePlan-4B-V2 is distributed through Hugging Face:
+The GGUF file for DeepSignal-CyclePlan-4B-V1.2 is distributed through Hugging Face. The repository and filename retain the original `V2` identifier for download compatibility:
 
 ```bash
 huggingface-cli download AIMS2025/DeepSignal-CyclePlan-4B-V2 \
